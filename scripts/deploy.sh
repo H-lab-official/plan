@@ -19,7 +19,7 @@ echo "==> Seed zones (INSERT OR IGNORE)..."
 npm run seed
 
 echo "==> Restart PM2..."
-pm2 restart 4eve-zones || pm2 start ecosystem.config.js
+pm2 restart 4eve-zones || pm2 start ecosystem.config.cjs
 pm2 save
 
 echo "==> Health check..."
