@@ -1,0 +1,4 @@
+plan4.devza.autos {
+	encode gzip
+	reverse_proxy localhost:3000
+}

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Interactive 4EVE Map</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Prompt', sans-serif; background-color: #111827; color: white; }
+        
+        /* ตั้งค่าคอนเทนเนอร์ของรูปภาพ */
+        .map-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px; /* ปรับขนาดความกว้างสูงสุดของรูป */
+            margin: 0 auto;
+        }
+        
+        .map-container img {
+            width: 100%;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        /* ปุ่มโซนที่วางทับบนรูป */
+        .zone-btn {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.8rem;
+            color: white;
+            cursor: pointer;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 6px;
+            background-color: rgba(0, 0, 0, 0.5);
+            transition: all 0.2s;
+        }
+
+        .zone-btn:hover {
+            border-color: white;
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%) scale(1.1);
+            z-index: 10;
+        }
+
+        /* สีสถานะ */
+        .status-empty { background-color: rgba(255, 255, 255, 0.1); }
+        .status-assigned { 
+            background-color: rgba(34, 197, 94, 0.7) !important; /* สีเขียวเมื่อ Assign แล้ว */
+            border-color: #4ade80;
+        }
+        .status-selected {
+            background-color: rgba(59, 130, 246, 0.8) !important; /* สีน้ำเงินเมื่อกำลังเลือก */
+            border-color: #60a5fa;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
+            z-index: 20;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
+        
+        <div class="flex-1">
+            <div class="mb-4 flex justify-between items-end">
+                <div>
+                    <h1 class="text-2xl font-bold text-blue-400">4EVE Unchained Zone Manager</h1>
+                    <p class="text-gray-400 text-sm mt-1">คลิกที่โซนบนแผนผังเพื่อจัดการข้อมูล</p>
+                </div>
+            </div>
+
+            <div class="map-container" id="mapContainer">
+                <img src="4EVE_concert_plan.jpg" alt="4EVE Concert Plan" onerror="this.src='https://via.placeholder.com/800x1000?text=กรุณานำรูป+4EVE_concert_plan.jpg+มาไว้ในโฟลเดอร์เดียวกับไฟล์นี้'">
+                
+                <div id="zone-overlays"></div>
+            </div>
+        </div>
+
+        <div class="w-full lg:w-96 space-y-4">
+            
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
+                <h2 class="text-xl font-semibold mb-4 text-white border-b border-gray-700 pb-2">จัดการข้อมูลโซน</h2>
+                
+                <div id="editor-panel" class="hidden space-y-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-gray-400">โซนที่เลือก:</span>
+                        <span id="current-zone-name" class="text-2xl font-bold text-blue-400 px-3 py-1 bg-blue-900/30 rounded-lg">--</span>
+                    </div>
+                    <div class="text-sm text-gray-500 mb-4" id="current-zone-level">ชั้น --</div>
+
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">ติดสีแล้ว ใส่เลข 1 (ตัวเลข)</label>
+                        <input type="number" id="input-hasColor" min="0" max="1" placeholder="0 หรือ 1" 
+                            class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Assign แล้ว (ระบุชื่อ)</label>
+                        <input type="text" id="input-assignedTo" placeholder="ระบุชื่อผู้รับผิดชอบ..." 
+                            class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+                    </div>
+
+                    <button onclick="saveCurrentZone()" class="w-full mt-4 bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 rounded-lg transition shadow-lg shadow-blue-900/50">
+                        อัปเดตข้อมูลโซนนี้
+                    </button>
+                </div>
+
+                <div id="no-selection-msg" class="text-center text-gray-500 py-10">
+                    <svg class="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+                    กรุณาคลิกเลือกโซนบนรูปภาพ<br>เพื่อกรอกข้อมูล
+                </div>
+            </div>
+
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold text-white">ภาพรวมความคืบหน้า</h2>
+                    <button onclick="exportData()" class="text-xs bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded transition">ดูข้อมูลดิบ</button>
+                </div>
+                <div id="summary-container" class="space-y-4">
+                    </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="toast" class="fixed top-5 right-5 bg-green-500 text-white px-6 py-3 rounded-lg shadow-xl transform transition-all duration-300 -translate-y-20 opacity-0 z-50 flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        <span id="toast-msg">บันทึกข้อมูลสำเร็จ</span>
+    </div>
+
+    <script>
+        // โครงสร้างข้อมูลพร้อมพิกัด (X, Y เป็นเปอร์เซ็นต์บนรูป) 
+        // *หมายเหตุ: พิกัด top, left กะประมาณจากรูป คุณสามารถแก้ตัวเลขในนี้เพื่อขยับตำแหน่งกรอบให้ตรงเป๊ะได้
+        const defaultZones = [
+            // ชั้น 1
+            { id: 'A1', level: 'ชั้น 1', color: 'blue', top: '44%', left: '36%', width: '7%', height: '10%', hasColor: '', assignedTo: '' },
+            { id: 'A2', level: 'ชั้น 1', color: 'blue', top: '44%', left: '45.5%', width: '7%', height: '10%', hasColor: '', assignedTo: '' },
+            { id: 'A3', level: 'ชั้น 1', color: 'blue', top: '44%', left: '55%', width: '7%', height: '10%', hasColor: '', assignedTo: '' },
+            { id: 'A4', level: 'ชั้น 1', color: 'blue', top: '44%', left: '64.5%', width: '7%', height: '10%', hasColor: '', assignedTo: '' },
+            
+            { id: 'B1', level: 'ชั้น 1', color: 'blue', top: '56%', left: '36%', width: '7%', height: '10%', hasColor: '', assignedTo: '' },
+            { id: 'B2', level: 'ชั้น 1', color: 'blue', top: '56%', left: '45.5%', width: '7%', height: '10%', hasColor: '', assignedTo: '' },
+            { id: 'B3', level: 'ชั้น 1', color: 'blue', top: '56%', left: '55%', width: '7%', height: '10%', hasColor: '', assignedTo: '' },
+            { id: 'B4', level: 'ชั้น 1', color: 'blue', top: '56%', left: '64.5%', width: '7%', height: '10%', hasColor: '', assignedTo: '' },
+            
+            { id: 'C1', level: 'ชั้น 1', color: 'blue', top: '65%', left: '43%', width: '7%', height: '4%', hasColor: '', assignedTo: '' },
+            { id: 'C2', level: 'ชั้น 1', color: 'blue', top: '65%', left: '57%', width: '7%', height: '4%', hasColor: '', assignedTo: '' },
+
+            // ชั้น 2 (ฝั่งซ้าย)
+            { id: 'SB', level: 'ชั้น 2', color: 'yellow', top: '38%', left: '26%', width: '5%', height: '5%', hasColor: '', assignedTo: '' },
+            { id: 'SC', level: 'ชั้น 2', color: 'yellow', top: '45%', left: '26%', width: '5%', height: '5%', hasColor: '', assignedTo: '' },
+            { id: 'SD', level: 'ชั้น 2', color: 'yellow', top: '53%', left: '26%', width: '5%', height: '5%', hasColor: '', assignedTo: '' },
+            { id: 'SE', level: 'ชั้น 2', color: 'yellow', top: '61%', left: '28%', width: '5%', height: '5%', hasColor: '', assignedTo: '' },
+            { id: 'SF', level: 'ชั้น 2', color: 'yellow', top: '67%', left: '34%', width: '6%', height: '4%', hasColor: '', assignedTo: '' },
+            { id: 'SG', level: 'ชั้น 2', color: 'yellow', top: '71%', left: '41%', width: '7%', height: '4%', hasColor: '', assignedTo: '' },
+            { id: 'SH', level: 'ชั้น 2', color: 'yellow', top: '71%', left: '50%', width: '7%', height: '4%', hasColor: '', assignedTo: '' },
+            { id: 'SI', level: 'ชั้น 2', color: 'yellow', top: '71%', left: '59%', width: '7%', height: '4%', hasColor: '', assignedTo: '' },
+            { id: 'SJ', level: 'ชั้น 2', color: 'yellow', top: '67%', left: '66%', width: '6%', height: '4%', hasColor: '', assignedTo: '' },
+            { id: 'SK', level: 'ชั้น 2', color: 'yellow', top: '61%', left: '72%', width: '5%', height: '5%', hasColor: '', assignedTo: '' },
+            { id: 'SL', level: 'ชั้น 2', color: 'yellow', top: '53%', left: '74%', width: '5%', height: '5%', hasColor: '', assignedTo: '' },
+            { id: 'SM', level: 'ชั้น 2', color: 'yellow', top: '45%', left: '74%', width: '5%', height: '5%', hasColor: '', assignedTo: '' },
+            { id: 'SN', level: 'ชั้น 2', color: 'yellow', top: '38%', left: '74%', width: '5%', height: '5%', hasColor: '', assignedTo: '' },
+
+            // ชั้น 3 (รอบนอก)
+            { id: 'B', level: 'ชั้น 3', color: 'red', top: '35%', left: '16%', width: '6%', height: '6%', hasColor: '', assignedTo: '' },
+            { id: 'C', level: 'ชั้น 3', color: 'red', top: '43%', left: '16%', width: '6%', height: '6%', hasColor: '', assignedTo: '' },
+            { id: 'D', level: 'ชั้น 3', color: 'red', top: '51%', left: '16%', width: '6%', height: '6%', hasColor: '', assignedTo: '' },
+            { id: 'E', level: 'ชั้น 3', color: 'red', top: '59%', left: '17%', width: '6%', height: '6%', hasColor: '', assignedTo: '' },
+            { id: 'F', level: 'ชั้น 3', color: 'red', top: '66%', left: '21%', width: '6%', height: '6%', hasColor: '', assignedTo: '' },
+            { id: 'G', level: 'ชั้น 3', color: 'red', top: '71%', left: '27%', width: '6%', height: '6%', hasColor: '', assignedTo: '' },
+            { id: 'H', level: 'ชั้น 3', color: 'red', top: '75%', left: '33%', width: '6%', height: '6%', hasColor: '', assignedTo: '' },
+            { id: 'I', level: 'ชั้น 3', color: 'red', top: '79%', left: '40%', width: '6%', height: '6%', hasColor: '', assignedTo: '' },
+            { id: 'J', level: 'ชั้น 3', color: 'red', top: '80%', left: '46%', width: '6%', height: '6%', hasColor: '', assignedTo: '' },
+            { id: 'K', level: 'ชั้น 3', color: 'red', top: '80%', left: '54%', width: '6%', height: '6%', hasColor: '', assignedTo: '' },
+            { id: 'L', level: 'ชั้น 3', color: 'red', top: '79%', left: '60%', width: '6%', height: '6%', hasColor: '', assignedTo: '' },
+            { id: 'M', level: 'ชั้น 3', color: 'red', top: '75%', left: '67%', width: '6%', height: '6%', hasColor: '', assignedTo: '' },
+            { id: 'N', level: 'ชั้น 3', color: 'red', top: '71%', left: '73%', width: '6%', height: '6%', hasColor: '', assignedTo: '' },
+            { id: 'O', level: 'ชั้น 3', color: 'red', top: '66%', left: '79%', width: '6%', height: '6%', hasColor: '', assignedTo: '' },
+            { id: 'P', level: 'ชั้น 3', color: 'red', top: '59%', left: '83%', width: '6%', height: '6%', hasColor: '', assignedTo: '' },
+            { id: 'Q', level: 'ชั้น 3', color: 'red', top: '51%', left: '84%', width: '6%', height: '6%', hasColor: '', assignedTo: '' },
+            { id: 'R', level: 'ชั้น 3', color: 'red', top: '43%', left: '84%', width: '6%', height: '6%', hasColor: '', assignedTo: '' },
+            { id: 'S', level: 'ชั้น 3', color: 'red', top: '35%', left: '84%', width: '6%', height: '6%', hasColor: '', assignedTo: '' },
+            { id: 'T', level: 'ชั้น 3', color: 'red', top: '28%', left: '84%', width: '6%', height: '6%', hasColor: '', assignedTo: '' },
+        ];
+
+        let zones = [];
+        let currentSelectedId = null;
+
+        function init() {
+            const savedData = localStorage.getItem('4eveZones');
+            if (savedData) {
+                // ผสานข้อมูลเดิมที่เซฟไว้ กับพิกัดปัจจุบัน
+                const parsed = JSON.parse(savedData);
+                zones = defaultZones.map(dz => {
+                    const savedZone = parsed.find(sz => sz.id === dz.id);
+                    return savedZone ? { ...dz, hasColor: savedZone.hasColor, assignedTo: savedZone.assignedTo } : dz;
+                });
+            } else {
+                zones = JSON.parse(JSON.stringify(defaultZones));
+            }
+            renderMap();
+            updateSummary();
+        }
+
+        // วาดกรอบสี่เหลี่ยมลงบนรูป
+        function renderMap() {
+            const overlayContainer = document.getElementById('zone-overlays');
+            overlayContainer.innerHTML = '';
+
+            zones.forEach(zone => {
+                const isAssigned = zone.assignedTo.trim() !== '';
+                const btn = document.createElement('div');
+                btn.className = `zone-btn ${isAssigned ? 'status-assigned' : 'status-empty'}`;
+                btn.id = `btn-${zone.id}`;
+                btn.style.top = zone.top;
+                btn.style.left = zone.left;
+                btn.style.width = zone.width;
+                btn.style.height = zone.height;
+                btn.innerText = zone.id;
+                
+                // ถ้าระบุชื่อแล้วให้มีไอคอนติ๊กถูก (ตัวเล็กๆ)
+                if(isAssigned) {
+                    btn.innerHTML = `${zone.id} <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>`;
+                }
+
+                btn.onclick = () => selectZone(zone.id);
+                overlayContainer.appendChild(btn);
+            });
+        }
+
+        // เมื่อคลิกที่โซนบนแผนผัง
+        function selectZone(id) {
+            currentSelectedId = id;
+            const zone = zones.find(z => z.id === id);
+            
+            // เปลี่ยนสี Highlight บนแผนผัง
+            document.querySelectorAll('.zone-btn').forEach(btn => btn.classList.remove('status-selected'));
+            document.getElementById(`btn-${id}`).classList.add('status-selected');
+
+            // แสดงหน้าต่างฟอร์ม
+            document.getElementById('no-selection-msg').classList.add('hidden');
+            document.getElementById('editor-panel').classList.remove('hidden');
+            
+            // ดึงข้อมูลมาใส่ฟอร์ม
+            document.getElementById('current-zone-name').innerText = zone.id;
+            document.getElementById('current-zone-level').innerText = zone.level;
+            document.getElementById('input-hasColor').value = zone.hasColor;
+            document.getElementById('input-assignedTo').value = zone.assignedTo;
+            
+            // โฟกัสไปที่ช่อง Assign
+            document.getElementById('input-assignedTo').focus();
+        }
+
+        // บันทึกข้อมูลของโซนที่กำลังเปิดอยู่
+        function saveCurrentZone() {
+            if (!currentSelectedId) return;
+
+            const index = zones.findIndex(z => z.id === currentSelectedId);
+            zones[index].hasColor = document.getElementById('input-hasColor').value;
+            zones[index].assignedTo = document.getElementById('input-assignedTo').value;
+
+            // บันทึกลง Local Storage
+            localStorage.setItem('4eveZones', JSON.stringify(zones));
+            
+            // รีเฟรชหน้าตา
+            renderMap();
+            updateSummary();
+            
+            // คงสถานะ Select ไว้
+            document.getElementById(`btn-${currentSelectedId}`).classList.add('status-selected');
+
+            showToast(`อัปเดตโซน ${currentSelectedId} เรียบร้อย!`);
+        }
+
+        // สร้าง Dashboard สรุปความคืบหน้า
+        function updateSummary() {
+            const container = document.getElementById('summary-container');
+            container.innerHTML = '';
+
+            const levels = ['ชั้น 3', 'ชั้น 2', 'ชั้น 1'];
+            
+            levels.forEach(level => {
+                const levelZones = zones.filter(z => z.level === level);
+                const total = levelZones.length;
+                const assignedCount = levelZones.filter(z => z.assignedTo.trim() !== '').length; 
+                const percentage = total === 0 ? 0 : Math.round((assignedCount / total) * 100);
+                
+                let barColor = 'bg-blue-500';
+                if(level === 'ชั้น 3') barColor = 'bg-red-500';
+                if(level === 'ชั้น 2') barColor = 'bg-yellow-500';
+
+                container.innerHTML += `
+                    <div>
+                        <div class="flex justify-between text-sm mb-1 text-gray-300">
+                            <span>${level}</span>
+                            <span>${assignedCount} / ${total} (${percentage}%)</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div class="${barColor} h-2 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // แจ้งเตือน
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('-translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('-translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // สำหรับดูข้อมูลดิบ
+        function exportData() {
+            const exportWin = window.open("", "_blank");
+            exportWin.document.write("<pre>" + JSON.stringify(zones, null, 2) + "</pre>");
+        }
+
+        // โหลดข้อมูลเมื่อเปิดหน้าเว็บ
+        init();
+    </script>
+</body>
+</html>
