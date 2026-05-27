@@ -36,11 +36,24 @@ jobs:
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.2
+        env:
+          REPO_URL: https://github.com/H-lab-official/plan.git
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script_stop: true
+          command_timeout: 10m
+          envs: REPO_URL
           script: |
-            cd /var/www/plan4eve
+            set -e
+            APP_DIR="/var/www/plan4eve"
+
+            if [ ! -d "$APP_DIR/.git" ]; then
+              echo "==> First deploy: clone public repo..."
+              sudo mkdir -p /var/www
+              sudo chown "$USER:$USER" /var/www
+              git clone "$REPO_URL" "$APP_DIR"
+            fi
+
+            cd "$APP_DIR"
             bash scripts/deploy.sh
