@@ -41,7 +41,10 @@ export function ZoneEditor({ zone, saving, onSave }: ZoneEditorProps) {
           {zone.id}
         </span>
       </div>
-      <div className="text-sm text-gray-500 mb-4">{zone.level}</div>
+      <div className="flex justify-between items-center text-sm mb-4">
+        <span className="text-gray-500">{zone.level}</span>
+        <span className="text-amber-400 font-medium">{zone.boxCount} กล่อง</span>
+      </div>
 
       <div>
         <label className="block text-sm text-gray-400 mb-1">ติดสีแล้ว ใส่เลข 1 (ตัวเลข)</label>

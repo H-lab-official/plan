@@ -9,5 +9,6 @@ export interface Zone {
   hasColor: number;
   assignedTo: string;
   boxLocation: string;
+  boxCount: number;
   updatedAt?: string;
 }

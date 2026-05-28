@@ -33,10 +33,12 @@ export function ProgressSummary({ zones, onExport }: ProgressSummaryProps) {
           const assignedCount = levelZones.filter((z) => z.assignedTo.trim() !== '').length;
           const percentage = total === 0 ? 0 : Math.round((assignedCount / total) * 100);
 
+          const boxTotal = levelZones.reduce((sum, z) => sum + z.boxCount, 0);
+
           return (
             <div key={level}>
               <div className="flex justify-between text-sm mb-1 text-gray-300">
-                <span>{level}</span>
+                <span>{level} · {boxTotal} กล่อง</span>
                 <span>
                   {assignedCount} / {total} ({percentage}%)
                 </span>

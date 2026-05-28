@@ -23,14 +23,20 @@ db.exec(`
     has_color    INTEGER DEFAULT 0,
     assigned_to  TEXT DEFAULT '',
     box_location TEXT DEFAULT '',
+    box_count    INTEGER DEFAULT 0,
     updated_at   TEXT DEFAULT (datetime('now'))
   );
 `);
 
-const columns = db.pragma('table_info(zones)') as { name: string }[];
-if (!columns.some((col) => col.name === 'box_location')) {
-  db.exec('ALTER TABLE zones ADD COLUMN box_location TEXT DEFAULT ""');
+function ensureColumn(name: string, ddl: string): void {
+  const cols = db.pragma('table_info(zones)') as { name: string }[];
+  if (!cols.some((col) => col.name === name)) {
+    db.exec(ddl);
+  }
 }
+
+ensureColumn('box_location', 'ALTER TABLE zones ADD COLUMN box_location TEXT DEFAULT ""');
+ensureColumn('box_count', 'ALTER TABLE zones ADD COLUMN box_count INTEGER DEFAULT 0');
 
 function rowToZone(row: ZoneRow): Zone {
   return {
@@ -43,6 +49,8 @@ function rowToZone(row: ZoneRow): Zone {
     height: row.height,
     hasColor: row.has_color,
     assignedTo: row.assigned_to,
+    boxLocation: row.box_location ?? '',
+    boxCount: row.box_count ?? 0,
     updatedAt: row.updated_at,
   };
 }

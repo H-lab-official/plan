@@ -42,7 +42,14 @@ export function ConcertMap({ zones, selectedId, onSelect }: ConcertMapProps) {
                 height: zone.height,
               }}
               onClick={() => onSelect(zone.id)}
-              title={hasBox ? `กล่อง: ${zone.boxLocation}` : undefined}
+              title={
+                [
+                  `${zone.boxCount} กล่อง`,
+                  hasBox ? `เก็บที่: ${zone.boxLocation}` : '',
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || undefined
+              }
             >
               {zone.id}
               {hasBox && <span className="text-xs ml-0.5">📦</span>}
