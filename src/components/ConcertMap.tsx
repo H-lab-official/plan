@@ -6,6 +6,12 @@ interface ConcertMapProps {
   onSelect: (id: string) => void;
 }
 
+function levelClass(level: string): string {
+  if (level === 'ชั้น 2') return 'zone-level-2';
+  if (level === 'ชั้น 3') return 'zone-level-3';
+  return 'zone-level-1';
+}
+
 export function ConcertMap({ zones, selectedId, onSelect }: ConcertMapProps) {
   return (
     <div className="map-container">
@@ -16,8 +22,12 @@ export function ConcertMap({ zones, selectedId, onSelect }: ConcertMapProps) {
           const isSelected = zone.id === selectedId;
           const className = [
             'zone-btn',
-            isSelected ? 'status-selected' : isAssigned ? 'status-assigned' : 'status-empty',
-          ].join(' ');
+            levelClass(zone.level),
+            isAssigned && 'status-assigned',
+            isSelected && 'status-selected',
+          ]
+            .filter(Boolean)
+            .join(' ');
 
           return (
             <button
