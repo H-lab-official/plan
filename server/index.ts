@@ -14,8 +14,8 @@ app.get('/api/zones', (_req, res) => {
 });
 
 app.put('/api/zones/:id', (req, res) => {
-  const { hasColor, assignedTo } = req.body as UpdateZoneBody;
-  const updated = updateZone(req.params.id, hasColor, assignedTo);
+  const { hasColor, assignedTo, boxLocation } = req.body as UpdateZoneBody;
+  const updated = updateZone(req.params.id, hasColor, assignedTo, boxLocation);
 
   if (!updated) {
     res.status(404).json({ error: 'Zone not found' });

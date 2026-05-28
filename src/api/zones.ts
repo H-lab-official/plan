@@ -10,11 +10,12 @@ export async function updateZoneApi(
   id: string,
   hasColor: number,
   assignedTo: string,
+  boxLocation: string,
 ): Promise<Zone> {
   const res = await fetch(`/api/zones/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ hasColor, assignedTo }),
+    body: JSON.stringify({ hasColor, assignedTo, boxLocation }),
   });
   if (!res.ok) throw new Error('Save failed');
   return res.json();

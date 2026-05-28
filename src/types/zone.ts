@@ -8,5 +8,6 @@ export interface Zone {
   height: string;
   hasColor: number;
   assignedTo: string;
+  boxLocation: string;
   updatedAt?: string;
 }

@@ -8,6 +8,7 @@ export interface ZoneRow {
   height: string;
   has_color: number;
   assigned_to: string;
+  box_location: string;
   updated_at: string;
 }
 
@@ -37,4 +38,5 @@ export interface ZoneSeed {
 export interface UpdateZoneBody {
   hasColor?: number | string;
   assignedTo?: string;
+  boxLocation?: string;
 }

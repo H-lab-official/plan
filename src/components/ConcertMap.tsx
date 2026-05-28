@@ -19,6 +19,7 @@ export function ConcertMap({ zones, selectedId, onSelect }: ConcertMapProps) {
       <div>
         {zones.map((zone) => {
           const isAssigned = zone.assignedTo.trim() !== '';
+          const hasBox = (zone.boxLocation ?? '').trim() !== '';
           const isSelected = zone.id === selectedId;
           const className = [
             'zone-btn',
@@ -41,8 +42,10 @@ export function ConcertMap({ zones, selectedId, onSelect }: ConcertMapProps) {
                 height: zone.height,
               }}
               onClick={() => onSelect(zone.id)}
+              title={hasBox ? `กล่อง: ${zone.boxLocation}` : undefined}
             >
               {zone.id}
+              {hasBox && <span className="text-xs ml-0.5">📦</span>}
               {isAssigned && (
                 <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />

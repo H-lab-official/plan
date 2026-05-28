@@ -4,17 +4,19 @@ import type { Zone } from '../types/zone';
 interface ZoneEditorProps {
   zone: Zone | null;
   saving: boolean;
-  onSave: (hasColor: number, assignedTo: string) => void;
+  onSave: (hasColor: number, assignedTo: string, boxLocation: string) => void;
 }
 
 export function ZoneEditor({ zone, saving, onSave }: ZoneEditorProps) {
   const [hasColor, setHasColor] = useState(0);
   const [assignedTo, setAssignedTo] = useState('');
+  const [boxLocation, setBoxLocation] = useState('');
 
   useEffect(() => {
     if (zone) {
       setHasColor(zone.hasColor);
       setAssignedTo(zone.assignedTo);
+      setBoxLocation(zone.boxLocation ?? '');
     }
   }, [zone]);
 
@@ -65,10 +67,21 @@ export function ZoneEditor({ zone, saving, onSave }: ZoneEditorProps) {
         />
       </div>
 
+      <div>
+        <label className="block text-sm text-gray-400 mb-1">กล่องเก็บอยู่ที่</label>
+        <input
+          type="text"
+          placeholder="เช่น ห้องเก็บ A, FOH ซ้าย..."
+          value={boxLocation}
+          onChange={(e) => setBoxLocation(e.target.value)}
+          className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+        />
+      </div>
+
       <button
         type="button"
         disabled={saving}
-        onClick={() => onSave(hasColor, assignedTo)}
+        onClick={() => onSave(hasColor, assignedTo, boxLocation)}
         className="w-full mt-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium py-2.5 rounded-lg transition shadow-lg shadow-blue-900/50"
       >
         {saving ? 'กำลังบันทึก...' : 'อัปเดตข้อมูลโซนนี้'}

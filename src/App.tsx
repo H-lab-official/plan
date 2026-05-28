@@ -36,12 +36,12 @@ function App() {
 
   const selectedZone = zones.find((z) => z.id === selectedId) ?? null;
 
-  const handleSave = async (hasColor: number, assignedTo: string) => {
+  const handleSave = async (hasColor: number, assignedTo: string, boxLocation: string) => {
     if (!selectedId) return;
 
     setSaving(true);
     try {
-      await updateZoneApi(selectedId, hasColor, assignedTo);
+      await updateZoneApi(selectedId, hasColor, assignedTo, boxLocation);
       await loadZones();
       showToast(`อัปเดตโซน ${selectedId} เรียบร้อย!`);
     } catch {

@@ -22,9 +22,15 @@ db.exec(`
     height       TEXT,
     has_color    INTEGER DEFAULT 0,
     assigned_to  TEXT DEFAULT '',
+    box_location TEXT DEFAULT '',
     updated_at   TEXT DEFAULT (datetime('now'))
   );
 `);
+
+const columns = db.pragma('table_info(zones)') as { name: string }[];
+if (!columns.some((col) => col.name === 'box_location')) {
+  db.exec('ALTER TABLE zones ADD COLUMN box_location TEXT DEFAULT ""');
+}
 
 function rowToZone(row: ZoneRow): Zone {
   return {
@@ -50,14 +56,15 @@ export function updateZone(
   id: string,
   hasColor: number | string | undefined,
   assignedTo: string | undefined,
+  boxLocation: string | undefined,
 ): Zone | null {
   const result = db
     .prepare(`
       UPDATE zones
-      SET has_color = ?, assigned_to = ?, updated_at = datetime('now')
+      SET has_color = ?, assigned_to = ?, box_location = ?, updated_at = datetime('now')
       WHERE id = ?
     `)
-    .run(Number(hasColor) || 0, assignedTo ?? '', id);
+    .run(Number(hasColor) || 0, assignedTo ?? '', boxLocation ?? '', id);
 
   if (result.changes === 0) return null;
 
